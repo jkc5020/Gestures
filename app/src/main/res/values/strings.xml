@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">Gestures</string>
+    <string name="flashlight">Flashlight</string>
+    <string name="camera">Camera</string>
+    <string name="flashLightSwitch">flashLightSwitch</string>
+    <string name="cameraSwitch">cameraSwitch</string>
+</resources>
