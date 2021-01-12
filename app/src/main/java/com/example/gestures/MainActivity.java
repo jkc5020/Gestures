@@ -1,12 +1,17 @@
 package com.example.gestures;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.hardware.Sensor;
 import android.hardware.SensorManager;
 import android.hardware.camera2.CameraManager;
 import android.os.Bundle;
 import android.os.Vibrator;
+import android.widget.Button;
+import android.widget.CompoundButton;
+import android.widget.EditText;
 import android.widget.Switch;
+import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
@@ -27,49 +32,87 @@ public class MainActivity extends AppCompatActivity  {
     private final float shakeThreshold = (float) 5.0;
     boolean isFlashOn;
     CameraManager cameraManager;
-    Switch aSwitch;
+    private Switch aSwitch;
     private Vibrator vibrator;
     private int count;
     Flashlight flashlight;
+    public TextView textView;
+    public EditText editText;
+    public Button applyTextButton;
+    public Button saveButton;
+    private Switch flashLightSwitch;
+    private static final String SHARED_PREFS = "sharedPrefs";
+    private static final String SWITCH1 = "switch1";
+
+    private boolean switchOnOff;
+    
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        Intent serviceIntent = new Intent(this, Flashlight.class);
-        serviceIntent.putExtra("inputExtra", "test");
-        ContextCompat.startForegroundService(this, serviceIntent);
-        startService();
-//        isFlashOn = false;
-//        vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
-//        isFirstTime = false;
-//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-//            cameraManager = (CameraManager) getSystemService(CAMERA_SERVICE);
-//        }
-//        aSwitch = (Switch) findViewById(R.id.switch1);
-//
-//        super.onCreate(savedInstanceState);
-//        setContentView(R.layout.activity_main);
-//        Log.d(TAG, "onCreate: Registered accelerometer listener");
-//        // gives permission to use sensor
-//        sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-//        accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-//        sensorManager.registerListener(MainActivity.this, accelerometer, MICROSECOND * 5);
-//        Log.d(TAG,"onCreate: Registered sensor");
-//        aSwitch.setOnClickListener(new CompoundButton.OnCheckedChangeListener() {
-//            @Override
-//            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
-//
-//            }
-//        });
+        flashLightSwitch = (Switch) findViewById(R.id.switch1);
+        flashLightSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+                if (b){
+                    startService();
+                }
+                else {
+                    stopService();
+                }
+            }
+        });
 
-
+        loadData();
+        updateViews();
 
     }
 
+    /**
+     * Dispatch onPause() to fragments.
+     */
+    @Override
+    protected void onPause() {
+        super.onPause();
+        saveData();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        saveData();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        saveData();
+    }
+
+    private void saveData(){
+        SharedPreferences sharedPreferences = getSharedPreferences(SHARED_PREFS, MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putBoolean(SWITCH1, flashLightSwitch.isChecked());
+        editor.apply();
+    }
+    private void loadData(){
+        SharedPreferences sharedPreferences = getSharedPreferences(SHARED_PREFS, MODE_PRIVATE);
+        switchOnOff = sharedPreferences.getBoolean(SWITCH1, false);
+    }
+
+    public void updateViews(){
+        flashLightSwitch.setChecked(switchOnOff);
+    }
     private void startService() {
         Intent serviceIntent = new Intent(this, Flashlight_service.class);
         serviceIntent.putExtra("inputExtra", "Foreground Service Example in Android");
         ContextCompat.startForegroundService(this, serviceIntent);
+    }
+
+    private void stopService(){
+        Intent serviceIntent = new Intent(this, Flashlight_service.class);
+        stopService(serviceIntent);
     }
 
 //    @Override

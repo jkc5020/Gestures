@@ -17,7 +17,6 @@ import android.os.Build;
 import android.os.IBinder;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
-import android.widget.Switch;
 
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
@@ -29,16 +28,13 @@ import com.example.gestures.R;
 public class Flashlight_service extends Service implements SensorEventListener {
     public static final String CHANNEL_ID = "ForegroundServiceChannel";
     private SensorManager sensorManager = null;
-    private final int MICROSECOND = 1000000;
-    Sensor accelerometer;
-    boolean isSwitch;
+
     private float currentX, currentY, currentZ, lastX, lastY, lastZ;
     private float xDifference, yDifference, zDifference;
     private boolean isFirstTime;
     private final float shakeThreshold = (float) 5.0;
     boolean isFlashOn;
     CameraManager cameraManager;
-    Switch aSwitch;
     private Vibrator vibrator;
     private int count;
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
