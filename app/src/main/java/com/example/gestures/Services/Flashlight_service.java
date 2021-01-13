@@ -145,4 +145,6 @@ public class Flashlight_service extends Service implements SensorEventListener {
     public void onAccuracyChanged(Sensor sensor, int i) {
 
     }
+
+
 }
