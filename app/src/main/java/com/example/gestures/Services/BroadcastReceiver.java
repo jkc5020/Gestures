@@ -8,6 +8,9 @@ import androidx.annotation.RequiresApi;
 
 import com.example.gestures.MainActivity;
 
+/**
+ * I think this is for notification
+ */
 public class BroadcastReceiver extends android.content.BroadcastReceiver{
 
     @RequiresApi(api = Build.VERSION_CODES.O)
