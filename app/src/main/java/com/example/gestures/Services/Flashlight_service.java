@@ -15,6 +15,7 @@ import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraManager;
 import android.media.AudioManager;
 import android.os.Build;
+import android.os.Bundle;
 import android.os.IBinder;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
@@ -47,6 +48,8 @@ public class Flashlight_service extends Service implements SensorEventListener {
     private boolean isFaceDown = false;
     NotificationManager manager;
     int current_mode; // stores the current ringer mode for the ringer
+    private boolean flash;
+    private boolean dnd;
 
     public Flashlight_service() {
         sensorManager = null;
@@ -101,7 +104,10 @@ public class Flashlight_service extends Service implements SensorEventListener {
      */
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        String input = intent.getStringExtra("inputExtra");
+        Bundle extras = intent.getExtras();
+        String input = extras.getString("service");
+        flash = extras.getBoolean("Flashlight");
+        dnd = extras.getBoolean("dnd");
         createNotificationChannel();
         Intent notificationIntent = new Intent(this, MainActivity.class);
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
@@ -124,7 +130,7 @@ public class Flashlight_service extends Service implements SensorEventListener {
      * @param sensorEvent - the sensorEvent from sensorEventListener
      */
     private void turnDND(SensorEvent sensorEvent) {
-        if (sensorEvent.values[2] < -9.7) {
+        if (sensorEvent.values[2] < -9.7 && dnd) {
             if (current_mode != 0) {
                 current_mode = audioManager.getRingerMode();
             }
@@ -140,7 +146,7 @@ public class Flashlight_service extends Service implements SensorEventListener {
             isFaceDown = true;
 
         }
-        if (sensorEvent.values[2] > 5 && isFaceDown) {
+        if (sensorEvent.values[2] > 5 && isFaceDown && dnd) {
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 manager.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_ALL);
@@ -199,7 +205,7 @@ public class Flashlight_service extends Service implements SensorEventListener {
         float currentY = sensorEvent.values[1];
         float currentZ = sensorEvent.values[2];
 
-        if (isFirstTime) {
+        if (isFirstTime && flash) {
             float xDifference = Math.abs(lastX - currentX);
             float yDifference = Math.abs(lastY - currentY);
             float zDifference = Math.abs(lastZ - currentZ);
