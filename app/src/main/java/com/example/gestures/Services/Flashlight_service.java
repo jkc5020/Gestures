@@ -27,6 +27,10 @@ import androidx.core.app.NotificationManagerCompat;
 import com.example.gestures.MainActivity;
 import com.example.gestures.R;
 
+/**
+ * The flashlight service(needs to be changed for a name)
+ * is in charge of handling all the gestures by monitoring the sensors
+ */
 public class Flashlight_service extends Service implements SensorEventListener {
     public static final String CHANNEL_ID = "ForegroundServiceChannel";
     private SensorManager sensorManager = null;
@@ -43,11 +47,15 @@ public class Flashlight_service extends Service implements SensorEventListener {
     private Sensor gravity = null;
     private AudioManager audioManager;
     private boolean isFaceDown = false;
-    private final int id1 = 1;
+    private final int id1 = 2;
     NotificationManager manager;
+    int current_mode; // stores the current ringer mode for the ringer
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     @Override
+    /**
+     * Registers all the required services
+     */
     public void onCreate() {
         super.onCreate();
         cameraManager = (CameraManager) getSystemService(CAMERA_SERVICE);
@@ -67,6 +75,29 @@ public class Flashlight_service extends Service implements SensorEventListener {
         return null;
     }
 
+
+    /**
+     * Creates a new notification channel
+     */
+    private void createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel serviceChannel = new NotificationChannel(
+                    CHANNEL_ID,
+                    "Foreground Service Channel",
+                    NotificationManager.IMPORTANCE_DEFAULT
+            );
+            NotificationManager manager = getSystemService(NotificationManager.class);
+            manager.createNotificationChannel(serviceChannel);
+            NotificationChannel dndChannel = new NotificationChannel(
+                    "dnd", "dnd", NotificationManager.IMPORTANCE_DEFAULT
+            );
+            manager.createNotificationChannel(dndChannel);
+        }
+    }
+
+    /**
+     * Creates a notification for the foreground service
+     */
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         String input = intent.getStringExtra("inputExtra");
@@ -78,6 +109,7 @@ public class Flashlight_service extends Service implements SensorEventListener {
                 .setContentText(input)
                 .setSmallIcon(R.drawable.ic_launcher_foreground)
                 .setContentIntent(pendingIntent)
+                //.setChannelId("Foreground Service Channel")
                 .build();
         startForeground(1, notification);
 
@@ -85,21 +117,14 @@ public class Flashlight_service extends Service implements SensorEventListener {
 
     }
 
-    private void createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel serviceChannel = new NotificationChannel(
-                    CHANNEL_ID,
-                    "Foreground Service Channel",
-                    NotificationManager.IMPORTANCE_DEFAULT
-            );
-            NotificationManager manager = getSystemService(NotificationManager.class);
-            manager.createNotificationChannel(serviceChannel);
-        }
-    }
-
+    /**
+     * Handles what event to execute upon change in sensor data
+     *
+     * @param sensorEvent
+     */
     @Override
     public void onSensorChanged(SensorEvent sensorEvent) {
-        if(sensorEvent.sensor.getType()==Sensor.TYPE_ACCELEROMETER) {
+        if (sensorEvent.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
             currentX = sensorEvent.values[0];
             currentY = sensorEvent.values[1];
             currentZ = sensorEvent.values[2];
@@ -144,34 +169,53 @@ public class Flashlight_service extends Service implements SensorEventListener {
 
 
             }
-            if(currentZ < -9.7){
-                audioManager.setRingerMode(AudioManager.RINGER_MODE_SILENT); //ringer mode
-            }
 
             lastX = currentX;
             lastY = currentY;
             lastZ = currentZ;
             isFirstTime = true;
         }
-        if(sensorEvent.sensor.getType() == Sensor.TYPE_GRAVITY){
-            if(sensorEvent.values[2]<-9.7){
-                audioManager.setRingerMode(AudioManager.RINGER_MODE_SILENT);
+        if(sensorEvent.sensor.getType() == Sensor.TYPE_GRAVITY) {
+
+            if (sensorEvent.values[2] < -9.7) {
+                if (current_mode != 0) {
+                    current_mode = audioManager.getRingerMode();
+                }
+                manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+
+                // turns on dnd
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    manager.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_NONE);
+                }
+
                 System.out.println(sensorEvent.values[2]);
 
                 isFaceDown = true;
 
             }
-            if(sensorEvent.values[2]>5 && isFaceDown){
-                Intent dndIntent = new Intent(this, AudioManager.class);
-                dndIntent.setAction(AudioManager.RINGER_MODE_CHANGED_ACTION);
-                NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
+            if (sensorEvent.values[2] > 5 && isFaceDown) {
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    manager.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_ALL);
+                }
+
+                Intent broadcastIntent = new Intent(this, Receiver.class);
+                broadcastIntent.setAction("user_yes");
+                PendingIntent actionIntent = PendingIntent.getBroadcast(this, 0, broadcastIntent,
+                        PendingIntent.FLAG_UPDATE_CURRENT);
+
+                NotificationCompat.Builder builder;
+                builder = new NotificationCompat.Builder(this, "dnd")
                         .setSmallIcon(R.drawable.ic_launcher_foreground)
                         .setContentTitle("Phone flipped")
-                        .setContentText("Your phone has been flipped would you like to deactivate dnd?")
-                        .setPriority(NotificationCompat.PRIORITY_DEFAULT);
+                        .setContentText("Your phone has been flipped and DND was deactivated would you like to turn it on again?")
+                        .setPriority(NotificationCompat.PRIORITY_MAX)
+                        .addAction(R.mipmap.ic_launcher, "Yes", actionIntent);
+
                 System.out.println(sensorEvent.values[2]);
                 NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this);
-                audioManager.setRingerMode(AudioManager.RINGER_MODE_NORMAL);
+
+
                 notificationManager.notify(id1, builder.build());
                 isFaceDown = false;
             }
@@ -179,11 +223,10 @@ public class Flashlight_service extends Service implements SensorEventListener {
 
         }
     }
+
     private void turnDND(){
 
     }
-
-
 
 
     @Override
