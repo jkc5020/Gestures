@@ -33,23 +33,24 @@ import com.example.gestures.R;
  */
 public class Flashlight_service extends Service implements SensorEventListener {
     public static final String CHANNEL_ID = "ForegroundServiceChannel";
-    private SensorManager sensorManager = null;
-    private float currentX, currentY, currentZ, lastX, lastY, lastZ;
-    private float xDifference, yDifference, zDifference;
+    private SensorManager sensorManager;
+    private float lastX;
+    private float lastY;
+    private float lastZ;
     private boolean isFirstTime;
-    private final float shakeThreshold = (float) 5.0;
     boolean isFlashOn;
     CameraManager cameraManager;
     private Vibrator vibrator;
     private int count;
-    private Sensor accelerometer = null;
     private Sensor gyroscope = null;
-    private Sensor gravity = null;
     private AudioManager audioManager;
     private boolean isFaceDown = false;
-    private final int id1 = 2;
     NotificationManager manager;
     int current_mode; // stores the current ringer mode for the ringer
+
+    public Flashlight_service() {
+        sensorManager = null;
+    }
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     @Override
@@ -61,9 +62,9 @@ public class Flashlight_service extends Service implements SensorEventListener {
         cameraManager = (CameraManager) getSystemService(CAMERA_SERVICE);
         vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
         sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
-        accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-        sensorManager.registerListener(this, accelerometer, 10* 1000);
-        gravity = sensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY);
+        Sensor accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        sensorManager.registerListener(this, accelerometer, 10 * 1000);
+        Sensor gravity = sensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY);
         sensorManager.registerListener(this, gravity, SensorManager.SENSOR_DELAY_NORMAL);
         audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
     }
@@ -118,6 +119,60 @@ public class Flashlight_service extends Service implements SensorEventListener {
     }
 
     /**
+     * Turns on dnd by monitoring the gravity sensor
+     *
+     * @param sensorEvent - the sensorEvent from sensorEventListener
+     */
+    private void turnDND(SensorEvent sensorEvent) {
+        if (sensorEvent.values[2] < -9.7) {
+            if (current_mode != 0) {
+                current_mode = audioManager.getRingerMode();
+            }
+            manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+
+            // turns on dnd
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                manager.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_NONE);
+            }
+
+            System.out.println(sensorEvent.values[2]);
+
+            isFaceDown = true;
+
+        }
+        if (sensorEvent.values[2] > 5 && isFaceDown) {
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                manager.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_ALL);
+            }
+
+            Intent broadcastIntent = new Intent(this, Receiver.class);
+            broadcastIntent.setAction("user_yes");
+            PendingIntent actionIntent = PendingIntent.getBroadcast(this, 0, broadcastIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT);
+
+            NotificationCompat.Builder builder;
+            builder = new NotificationCompat.Builder(this, "dnd")
+                    .setSmallIcon(R.drawable.ic_launcher_foreground)
+                    .setContentTitle("Phone flipped")
+                    .setContentText("Your phone has been flipped and DND was deactivated would you like to turn it on again?")
+                    .setPriority(NotificationCompat.PRIORITY_MAX)
+                    .addAction(R.mipmap.ic_launcher, "Yes", actionIntent);
+
+            System.out.println(sensorEvent.values[2]);
+            NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this);
+
+
+            int id1 = 2;
+            notificationManager.notify(id1, builder.build());
+            isFaceDown = false;
+        }
+        System.out.println(sensorEvent.values[2]);
+
+    }
+
+
+    /**
      * Handles what event to execute upon change in sensor data
      *
      * @param sensorEvent
@@ -125,114 +180,81 @@ public class Flashlight_service extends Service implements SensorEventListener {
     @Override
     public void onSensorChanged(SensorEvent sensorEvent) {
         if (sensorEvent.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
-            currentX = sensorEvent.values[0];
-            currentY = sensorEvent.values[1];
-            currentZ = sensorEvent.values[2];
+            turnFlashlight(sensorEvent);
+        }
+        if (sensorEvent.sensor.getType() == Sensor.TYPE_GRAVITY) {
+            turnDND(sensorEvent);
 
-            if (isFirstTime) {
-                xDifference = Math.abs(lastX - currentX);
-                yDifference = Math.abs(lastY - currentY);
-                zDifference = Math.abs(lastZ - currentZ);
-                if (xDifference > shakeThreshold) {
-                    count++;
-                    //Log.d(TAG, "Count " + count);
-                }
+        }
 
-                if (count == 20) {
-                    {
+    }
 
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                            vibrator.vibrate(VibrationEffect.createOneShot
-                                    (500, VibrationEffect.DEFAULT_AMPLITUDE));
-                            if (!isFlashOn) {
-                                try {
-                                    cameraManager.setTorchMode("0", true);
-                                } catch (CameraAccessException e) {
-                                    e.printStackTrace();
-                                }
-                                isFlashOn = true;
-                            } else {
-                                try {
-                                    cameraManager.setTorchMode("0", false);
-                                } catch (CameraAccessException e) {
-                                    e.printStackTrace();
-                                }
-                                isFlashOn = false;
+    /**
+     * Turns on the flashlight by monitoring the accelerometer
+     *
+     * @param sensorEvent - event
+     */
+    private void turnFlashlight(SensorEvent sensorEvent) {
+        float currentX = sensorEvent.values[0];
+        float currentY = sensorEvent.values[1];
+        float currentZ = sensorEvent.values[2];
+
+        if (isFirstTime) {
+            float xDifference = Math.abs(lastX - currentX);
+            float yDifference = Math.abs(lastY - currentY);
+            float zDifference = Math.abs(lastZ - currentZ);
+            float shakeThreshold = (float) 5.0;
+            if (xDifference > shakeThreshold) {
+                count++;
+                //Log.d(TAG, "Count " + count);
+            }
+
+            if (count == 20) {
+                {
+
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        vibrator.vibrate(VibrationEffect.createOneShot
+                                (500, VibrationEffect.DEFAULT_AMPLITUDE));
+                        if (!isFlashOn) {
+                            try {
+                                cameraManager.setTorchMode("0", true);
+                            } catch (CameraAccessException e) {
+                                e.printStackTrace();
                             }
+                            isFlashOn = true;
                         } else {
-                            vibrator.vibrate(500);
+                            try {
+                                cameraManager.setTorchMode("0", false);
+                            } catch (CameraAccessException e) {
+                                e.printStackTrace();
+                            }
+                            isFlashOn = false;
                         }
+                    } else {
+                        vibrator.vibrate(500);
                     }
-
-                    count = 0;
                 }
 
-
+                count = 0;
             }
 
-            lastX = currentX;
-            lastY = currentY;
-            lastZ = currentZ;
-            isFirstTime = true;
-        }
-        if(sensorEvent.sensor.getType() == Sensor.TYPE_GRAVITY) {
-
-            if (sensorEvent.values[2] < -9.7) {
-                if (current_mode != 0) {
-                    current_mode = audioManager.getRingerMode();
-                }
-                manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-
-                // turns on dnd
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    manager.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_NONE);
-                }
-
-                System.out.println(sensorEvent.values[2]);
-
-                isFaceDown = true;
-
-            }
-            if (sensorEvent.values[2] > 5 && isFaceDown) {
-
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    manager.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_ALL);
-                }
-
-                Intent broadcastIntent = new Intent(this, Receiver.class);
-                broadcastIntent.setAction("user_yes");
-                PendingIntent actionIntent = PendingIntent.getBroadcast(this, 0, broadcastIntent,
-                        PendingIntent.FLAG_UPDATE_CURRENT);
-
-                NotificationCompat.Builder builder;
-                builder = new NotificationCompat.Builder(this, "dnd")
-                        .setSmallIcon(R.drawable.ic_launcher_foreground)
-                        .setContentTitle("Phone flipped")
-                        .setContentText("Your phone has been flipped and DND was deactivated would you like to turn it on again?")
-                        .setPriority(NotificationCompat.PRIORITY_MAX)
-                        .addAction(R.mipmap.ic_launcher, "Yes", actionIntent);
-
-                System.out.println(sensorEvent.values[2]);
-                NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this);
-
-
-                notificationManager.notify(id1, builder.build());
-                isFaceDown = false;
-            }
-            System.out.println(sensorEvent.values[2]);
 
         }
+
+        lastX = currentX;
+        lastY = currentY;
+        lastZ = currentZ;
+        isFirstTime = true;
     }
-
-    private void turnDND(){
-
-    }
-
 
     @Override
     public void onAccuracyChanged(Sensor sensor, int i) {
 
     }
-
-
 }
+
+
+
+
+
+

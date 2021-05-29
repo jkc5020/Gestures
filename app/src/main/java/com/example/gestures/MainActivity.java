@@ -91,6 +91,7 @@ public class MainActivity extends AppCompatActivity  {
     public void updateViews(){
         flashLightSwitch.setChecked(switchOnOff);
     }
+
     private void startService() {
         Intent serviceIntent = new Intent(this, Flashlight_service.class);
         serviceIntent.putExtra("inputExtra", "Foreground Service Example in Android");

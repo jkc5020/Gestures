@@ -4,4 +4,5 @@
     <string name="camera">Camera</string>
     <string name="flashLightSwitch">flashLightSwitch</string>
     <string name="cameraSwitch">cameraSwitch</string>
+    <string name="Flip_dnd_text">Flip for Do not Disturb</string>
 </resources>
