@@ -43,13 +43,13 @@ public class Flashlight_service extends Service implements SensorEventListener {
     CameraManager cameraManager;
     private Vibrator vibrator;
     private int count;
-    private Sensor gyroscope = null;
     private AudioManager audioManager;
     private boolean isFaceDown = false;
     NotificationManager manager;
     int current_mode; // stores the current ringer mode for the ringer
     private boolean flash;
     private boolean dnd;
+    private boolean silence;
 
     public Flashlight_service() {
         sensorManager = null;
@@ -70,6 +70,7 @@ public class Flashlight_service extends Service implements SensorEventListener {
         Sensor gravity = sensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY);
         sensorManager.registerListener(this, gravity, SensorManager.SENSOR_DELAY_NORMAL);
         audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+        Sensor gyroscope = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
     }
 
 
@@ -108,6 +109,7 @@ public class Flashlight_service extends Service implements SensorEventListener {
         String input = extras.getString("service");
         flash = extras.getBoolean("Flashlight");
         dnd = extras.getBoolean("dnd");
+        silence = extras.getBoolean("silence");
         createNotificationChannel();
         Intent notificationIntent = new Intent(this, MainActivity.class);
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
@@ -193,6 +195,29 @@ public class Flashlight_service extends Service implements SensorEventListener {
 
         }
 
+        if(sensorEvent.sensor.getType()== Sensor.TYPE_GYROSCOPE){
+            //turnSilence(sensorEvent);
+        }
+
+    }
+
+    /**
+     * turns on silent mode
+     * @param sensorEvent
+     */
+    private void turnSilence(SensorEvent sensorEvent) {
+        float currentX = sensorEvent.values[0];
+        float currentY = sensorEvent.values[1];
+        float currentZ = sensorEvent.values[2];
+        int count = 0;
+        if(silence) if (Math.abs(currentY) > 5) {
+            count += 1;
+        }
+
+        if(count > 2){
+            audioManager.setRingerMode(AudioManager.RINGER_MODE_SILENT);
+
+        }
     }
 
     /**
@@ -253,6 +278,11 @@ public class Flashlight_service extends Service implements SensorEventListener {
         isFirstTime = true;
     }
 
+    /**
+     * Function required for interface implementation
+     * @param sensor
+     * @param i
+     */
     @Override
     public void onAccuracyChanged(Sensor sensor, int i) {
 
