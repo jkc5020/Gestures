@@ -30,7 +30,6 @@ public class MainActivity extends AppCompatActivity {
     public static final String SWITCH4 = "switch4";
     private Switch dndSwitch;
     private Switch serviceSwitch;
-    private Switch silenceSwitch;
     private boolean flashOn;
     private NotificationManager notificationManager;
     private boolean flashLightOn;
@@ -52,7 +51,6 @@ public class MainActivity extends AppCompatActivity {
         flashLightSwitch = (Switch) findViewById(R.id.switch1);
         dndSwitch = (Switch) findViewById(R.id.switch2);
         serviceSwitch = (Switch) findViewById(R.id.switch3);
-        silenceSwitch = (Switch) findViewById(R.id.switch4);
         button = (Button) findViewById(R.id.button_update);
 
         loadData();
@@ -90,7 +88,6 @@ public class MainActivity extends AppCompatActivity {
         editor.putBoolean(SWITCH1, flashLightSwitch.isChecked());
         editor.putBoolean(SWITCH2, dndSwitch.isChecked());
         editor.putBoolean((SWITCH3), serviceSwitch.isChecked());
-        editor.putBoolean((SWITCH4), silenceSwitch.isChecked());
 
         editor.apply();
     }
@@ -103,7 +100,6 @@ public class MainActivity extends AppCompatActivity {
         flashOn = sharedPreferences.getBoolean(SWITCH1, false);
         dndChecked = sharedPreferences.getBoolean(SWITCH2, false);
         serviceOn = sharedPreferences.getBoolean(SWITCH3, false);
-        silenceOn = sharedPreferences.getBoolean(SWITCH4, false);
     }
 
     /**
@@ -114,7 +110,6 @@ public class MainActivity extends AppCompatActivity {
         flashLightSwitch.setChecked(flashOn);
         serviceSwitch.setChecked(serviceOn);
         dndSwitch.setChecked(dndChecked);
-        silenceSwitch.setChecked(silenceOn);
     }
 
     /**
@@ -126,7 +121,6 @@ public class MainActivity extends AppCompatActivity {
         extras.putBoolean("Service", true);
         extras.putBoolean("Flashlight", flashLightSwitch.isChecked());
         extras.putBoolean("dnd", dndSwitch.isChecked());
-        extras.putBoolean("silence", silenceSwitch.isChecked());
         extras.putString("service", "foreground service on");
         serviceIntent.putExtras(extras);
         ContextCompat.startForegroundService(this, serviceIntent);

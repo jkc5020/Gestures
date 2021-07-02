@@ -246,23 +246,27 @@ public class Flashlight_service extends Service implements SensorEventListener {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                         vibrator.vibrate(VibrationEffect.createOneShot
                                 (500, VibrationEffect.DEFAULT_AMPLITUDE));
-                        if (!isFlashOn) {
-                            try {
-                                cameraManager.setTorchMode("0", true);
-                            } catch (CameraAccessException e) {
-                                e.printStackTrace();
-                            }
-                            isFlashOn = true;
-                        } else {
-                            try {
-                                cameraManager.setTorchMode("0", false);
-                            } catch (CameraAccessException e) {
-                                e.printStackTrace();
-                            }
-                            isFlashOn = false;
-                        }
+
                     } else {
                         vibrator.vibrate(500);
+                    }
+
+                    if (!isFlashOn) {
+                        try {
+                            cameraManager.setTorchMode("0", true);
+                        } catch (CameraAccessException e) {
+                            e.printStackTrace();
+                        }
+                        isFlashOn = true;
+                    }
+
+                    else {
+                        try {
+                            cameraManager.setTorchMode("0", false);
+                        } catch (CameraAccessException e) {
+                            e.printStackTrace();
+                        }
+                        isFlashOn = false;
                     }
                 }
 

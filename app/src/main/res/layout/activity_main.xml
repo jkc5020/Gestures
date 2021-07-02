@@ -38,12 +38,11 @@
         android:id="@+id/switch1"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="84dp"
+        android:layout_marginBottom="100dp"
+        android:thumb="@drawable/thumb"
         app:layout_constraintBottom_toTopOf="@+id/switch2"
         app:layout_constraintEnd_toEndOf="parent"
-        android:thumb="@drawable/thumb"
-        app:track="@drawable/track"
-        />
+        app:track="@drawable/track" />
 
     <Switch
         android:id="@+id/switch2"

@@ -8,4 +8,5 @@
     <string name="start_stop_service">Start/stop service</string>
     <string name="update_settings">Update settings</string>
     <string name="twist_to_silence">Twist to silence</string>
+    <string name="i">i</string>
 </resources>
