@@ -50,6 +50,7 @@ public class Flashlight_service extends Service implements SensorEventListener {
     private boolean flash;
     private boolean dnd;
     private boolean silence;
+    private int sliderValue;
 
     public Flashlight_service() {
         sensorManager = null;
@@ -110,6 +111,7 @@ public class Flashlight_service extends Service implements SensorEventListener {
         flash = extras.getBoolean("Flashlight");
         dnd = extras.getBoolean("dnd");
         silence = extras.getBoolean("silence");
+        sliderValue = extras.getInt("Sensitivity");
         createNotificationChannel();
         Intent notificationIntent = new Intent(this, MainActivity.class);
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
@@ -195,7 +197,7 @@ public class Flashlight_service extends Service implements SensorEventListener {
 
         }
 
-        if(sensorEvent.sensor.getType()== Sensor.TYPE_GYROSCOPE){
+        if (sensorEvent.sensor.getType() == Sensor.TYPE_GYROSCOPE) {
             //turnSilence(sensorEvent);
         }
 
@@ -203,6 +205,7 @@ public class Flashlight_service extends Service implements SensorEventListener {
 
     /**
      * turns on silent mode
+     *
      * @param sensorEvent
      */
     private void turnSilence(SensorEvent sensorEvent) {
@@ -210,11 +213,11 @@ public class Flashlight_service extends Service implements SensorEventListener {
         float currentY = sensorEvent.values[1];
         float currentZ = sensorEvent.values[2];
         int count = 0;
-        if(silence) if (Math.abs(currentY) > 5) {
+        if (silence) if (Math.abs(currentY) > 5) {
             count += 1;
         }
 
-        if(count > 2){
+        if (count > 2) {
             audioManager.setRingerMode(AudioManager.RINGER_MODE_SILENT);
 
         }
@@ -234,7 +237,13 @@ public class Flashlight_service extends Service implements SensorEventListener {
             float xDifference = Math.abs(lastX - currentX);
             float yDifference = Math.abs(lastY - currentY);
             float zDifference = Math.abs(lastZ - currentZ);
-            float shakeThreshold = (float) 5.0;
+            float shakeThreshold;
+            if(sliderValue == 0) {
+                shakeThreshold = (float) 5.0;
+            }
+            else{
+                shakeThreshold = (float) (11.0 - sliderValue);
+            }
             if (xDifference > shakeThreshold) {
                 count++;
                 //Log.d(TAG, "Count " + count);
@@ -258,9 +267,7 @@ public class Flashlight_service extends Service implements SensorEventListener {
                             e.printStackTrace();
                         }
                         isFlashOn = true;
-                    }
-
-                    else {
+                    } else {
                         try {
                             cameraManager.setTorchMode("0", false);
                         } catch (CameraAccessException e) {
@@ -283,7 +290,28 @@ public class Flashlight_service extends Service implements SensorEventListener {
     }
 
     /**
+     * Calculates sensitivity of flashlight based on seekBar
+     * @return - the value
+     */
+    private float calcSensitivity() {
+        if(sliderValue > 0 && sliderValue <=25){
+            return 2;
+        }
+        else if(sliderValue > 25 && sliderValue <=50){
+            return 3;
+        }
+
+        else if(sliderValue > 50 && sliderValue <=75){
+            return 4;
+        }
+        else {
+            return 5;
+        }
+    }
+
+    /**
      * Function required for interface implementation
+     *
      * @param sensor
      * @param i
      */

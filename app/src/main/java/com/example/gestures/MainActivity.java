@@ -9,9 +9,12 @@ import android.os.Bundle;
 import android.provider.Settings;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CompoundButton;
+import android.widget.SeekBar;
 import android.widget.Switch;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.content.ContextCompat;
 
 import com.example.gestures.Services.Flashlight_service;
@@ -38,25 +41,75 @@ public class MainActivity extends AppCompatActivity {
     private boolean serviceOn;
     private boolean silenceOn;
     private Button button;
+    private SeekBar seekBar;
+    ConstraintLayout constraintLayout;
+    private int value;
 
 
+    public void showSlider(View view){
+        constraintLayout.setVisibility(View.VISIBLE);
+
+    }
+
+    public void hideSlider(View view){
+        constraintLayout.setVisibility(View.INVISIBLE);
+
+
+    }
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         this.notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !notificationManager.isNotificationPolicyAccessGranted()) {
             startActivity(new Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS));
         }
         flashLightSwitch = (Switch) findViewById(R.id.switch1);
+        flashLightSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+
+                if(b){
+                    showSlider(constraintLayout);
+                }
+
+                else{
+                    hideSlider(constraintLayout);
+                }
+
+            }
+        });
+        seekBar = (SeekBar) findViewById(R.id.seekBar);
+        seekBar.setMax(10);
+        seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
+                value = i;
+
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+
+            }
+        });
         dndSwitch = (Switch) findViewById(R.id.switch2);
         serviceSwitch = (Switch) findViewById(R.id.switch3);
         button = (Button) findViewById(R.id.button_update);
+        constraintLayout = (ConstraintLayout) findViewById(R.id.seekView);
+
 
         loadData();
         updateViews();
 
     }
+
 
     /**
      * Dispatch onPause() to fragments.
@@ -110,6 +163,8 @@ public class MainActivity extends AppCompatActivity {
         flashLightSwitch.setChecked(flashOn);
         serviceSwitch.setChecked(serviceOn);
         dndSwitch.setChecked(dndChecked);
+
+       
     }
 
     /**
@@ -122,6 +177,7 @@ public class MainActivity extends AppCompatActivity {
         extras.putBoolean("Flashlight", flashLightSwitch.isChecked());
         extras.putBoolean("dnd", dndSwitch.isChecked());
         extras.putString("service", "foreground service on");
+        extras.putInt("Sensitivity", value);
         serviceIntent.putExtras(extras);
         ContextCompat.startForegroundService(this, serviceIntent);
     }
@@ -136,7 +192,8 @@ public class MainActivity extends AppCompatActivity {
 
 
     /**
-     * updates the display settings when the app is reopened
+     * updates the service settings when user clicks button
+     * based on technique of using android:onClick in XML file
      * @param view
      */
     public void updateSettings(View view) {
