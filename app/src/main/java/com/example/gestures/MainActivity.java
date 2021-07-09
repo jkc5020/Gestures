@@ -31,6 +31,7 @@ public class MainActivity extends AppCompatActivity {
     public static final String SHARED_PREFS = "sharedPrefs";
     public static final String SWITCH1 = "switch1";
     public static final String SWITCH4 = "switch4";
+    private static final String PROGRESS = "progress";
     private Switch dndSwitch;
     private Switch serviceSwitch;
     private boolean flashOn;
@@ -42,6 +43,8 @@ public class MainActivity extends AppCompatActivity {
     private boolean silenceOn;
     private Button button;
     private SeekBar seekBar;
+    private int progressVal;
+    private ConstraintLayout functionView;
     ConstraintLayout constraintLayout;
     private int value;
 
@@ -80,6 +83,7 @@ public class MainActivity extends AppCompatActivity {
 
             }
         });
+
         seekBar = (SeekBar) findViewById(R.id.seekBar);
         seekBar.setMax(10);
         seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
@@ -101,9 +105,21 @@ public class MainActivity extends AppCompatActivity {
         });
         dndSwitch = (Switch) findViewById(R.id.switch2);
         serviceSwitch = (Switch) findViewById(R.id.switch3);
+        serviceSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+                if(b){
+                    functionView.setVisibility(View.VISIBLE);
+
+                }
+                else{
+                    functionView.setVisibility(View.INVISIBLE);
+                }
+            }
+        });
         button = (Button) findViewById(R.id.button_update);
         constraintLayout = (ConstraintLayout) findViewById(R.id.seekView);
-
+        functionView = (ConstraintLayout) findViewById(R.id.functionView);
 
         loadData();
         updateViews();
@@ -141,7 +157,7 @@ public class MainActivity extends AppCompatActivity {
         editor.putBoolean(SWITCH1, flashLightSwitch.isChecked());
         editor.putBoolean(SWITCH2, dndSwitch.isChecked());
         editor.putBoolean((SWITCH3), serviceSwitch.isChecked());
-
+        editor.putInt(PROGRESS, seekBar.getProgress());
         editor.apply();
     }
 
@@ -153,6 +169,7 @@ public class MainActivity extends AppCompatActivity {
         flashOn = sharedPreferences.getBoolean(SWITCH1, false);
         dndChecked = sharedPreferences.getBoolean(SWITCH2, false);
         serviceOn = sharedPreferences.getBoolean(SWITCH3, false);
+        progressVal = sharedPreferences.getInt(PROGRESS,5);
     }
 
     /**
@@ -163,6 +180,8 @@ public class MainActivity extends AppCompatActivity {
         flashLightSwitch.setChecked(flashOn);
         serviceSwitch.setChecked(serviceOn);
         dndSwitch.setChecked(dndChecked);
+        seekBar.setProgress(progressVal);
+
 
        
     }
