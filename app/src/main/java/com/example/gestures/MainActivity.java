@@ -158,6 +158,7 @@ public class MainActivity extends AppCompatActivity {
         editor.putBoolean(SWITCH2, dndSwitch.isChecked());
         editor.putBoolean((SWITCH3), serviceSwitch.isChecked());
         editor.putInt(PROGRESS, seekBar.getProgress());
+
         editor.apply();
     }
 
