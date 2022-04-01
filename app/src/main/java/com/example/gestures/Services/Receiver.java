@@ -10,7 +10,7 @@ import androidx.annotation.RequiresApi;
 import com.example.gestures.MainActivity;
 
 /**
- * I think this is for notification
+ * Broadcast receiver for notification button action handling
  */
 public class Receiver extends android.content.BroadcastReceiver {
 

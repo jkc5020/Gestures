@@ -1,5 +1,6 @@
 package com.example.gestures.Services;
 
+import android.annotation.SuppressLint;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -32,35 +33,46 @@ import com.example.gestures.R;
  * The flashlight service(needs to be changed for a name)
  * is in charge of handling all the gestures by monitoring the sensors
  */
+
 public class Flashlight_service extends Service implements SensorEventListener {
     public static final String CHANNEL_ID = "ForegroundServiceChannel";
-    private SensorManager sensorManager;
+    private SensorManager sensorManager; //Manages listening to all device sensors
+
+    // coordinates for sensors
     private float lastX;
     private float lastY;
     private float lastZ;
-    private boolean isFirstTime;
+
+    private boolean isFirstTime; // checks if flashlight action has only done once to help with
+                                // motion accuracy, that way a "chop" will have to be done twice to
+                                // execute action
+
     boolean isFlashOn;
-    CameraManager cameraManager;
+    CameraManager cameraManager; // accesses camera to gain Flashlight capability
     private Vibrator vibrator;
     private int count;
     private AudioManager audioManager;
     private boolean isFaceDown = false;
     NotificationManager manager;
     int current_mode; // stores the current ringer mode for the ringer
+
+    // flash, dnd, silence are true if user wants these actions to be used, false if not
+
     private boolean flash;
     private boolean dnd;
     private boolean silence;
-    private int sliderValue;
+    private int sliderValue; // for sensitivity of flashlight
 
     public Flashlight_service() {
         sensorManager = null;
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
-    @Override
     /**
      * Registers all the required services
      */
+
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+    @Override
     public void onCreate() {
         super.onCreate();
         cameraManager = (CameraManager) getSystemService(CAMERA_SERVICE);
@@ -102,7 +114,8 @@ public class Flashlight_service extends Service implements SensorEventListener {
     }
 
     /**
-     * Creates a notification for the foreground service
+     * Creates a notification for the foreground service,
+     * and start the foreground service
      */
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
@@ -129,11 +142,13 @@ public class Flashlight_service extends Service implements SensorEventListener {
     }
 
     /**
-     * Turns on dnd by monitoring the gravity sensor
-     *
-     * @param sensorEvent - the sensorEvent from sensorEventListener
+     * Turns on/off dnd by monitoring the gravity sensor
+     * Several conditionals ensure the feature only turns on based on the right scenario
+     * @param sensorEvent - the sensorEvent from original method
      */
+    @SuppressLint("NotificationTrampoline")
     private void turnDND(SensorEvent sensorEvent) {
+        // turns on dnd
         if (sensorEvent.values[2] < -9.7 && dnd) {
             if (current_mode != 0) {
                 current_mode = audioManager.getRingerMode();
@@ -150,6 +165,7 @@ public class Flashlight_service extends Service implements SensorEventListener {
             isFaceDown = true;
 
         }
+        // turns off DND, and sends notification asking if user would like to keep it on
         if (sensorEvent.values[2] > 5 && isFaceDown && dnd) {
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -183,9 +199,9 @@ public class Flashlight_service extends Service implements SensorEventListener {
 
 
     /**
-     * Handles what event to execute upon change in sensor data
+     * Handles what event to execute upon change in sensor data and uses several helper methods
      *
-     * @param sensorEvent
+     * @param sensorEvent - any change in the device sensor monitoring
      */
     @Override
     public void onSensorChanged(SensorEvent sensorEvent) {
@@ -204,9 +220,9 @@ public class Flashlight_service extends Service implements SensorEventListener {
     }
 
     /**
-     * turns on silent mode
+     * turns on silent mode, not currently used
      *
-     * @param sensorEvent
+     * @param sensorEvent - sensorEvent from original method
      */
     private void turnSilence(SensorEvent sensorEvent) {
         float currentX = sensorEvent.values[0];
@@ -226,18 +242,25 @@ public class Flashlight_service extends Service implements SensorEventListener {
     /**
      * Turns on the flashlight by monitoring the accelerometer
      *
-     * @param sensorEvent - event
+     * @param sensorEvent -  sensorEvent from original method
      */
     private void turnFlashlight(SensorEvent sensorEvent) {
         float currentX = sensorEvent.values[0];
         float currentY = sensorEvent.values[1];
         float currentZ = sensorEvent.values[2];
 
+        // turns on/off flashlight if user selected this feature
         if (isFirstTime && flash) {
+
+            //calculations
             float xDifference = Math.abs(lastX - currentX);
             float yDifference = Math.abs(lastY - currentY);
             float zDifference = Math.abs(lastZ - currentZ);
+
+            // threshold from slider on UI
             float shakeThreshold;
+
+            // default value
             if(sliderValue == 0) {
                 shakeThreshold = (float) 5.0;
             }
@@ -249,8 +272,10 @@ public class Flashlight_service extends Service implements SensorEventListener {
                 //Log.d(TAG, "Count " + count);
             }
 
+            // will only turn on count if enough motion change of the right magnitude is done
             if (count == 20) {
                 {
+                    // vibrates the phone
 
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                         vibrator.vibrate(VibrationEffect.createOneShot
@@ -260,6 +285,7 @@ public class Flashlight_service extends Service implements SensorEventListener {
                         vibrator.vibrate(500);
                     }
 
+                    // turn on flashlight if it is off
                     if (!isFlashOn) {
                         try {
                             cameraManager.setTorchMode("0", true);
@@ -267,7 +293,9 @@ public class Flashlight_service extends Service implements SensorEventListener {
                             e.printStackTrace();
                         }
                         isFlashOn = true;
-                    } else {
+                    }
+                    // turn off flashlight if it is on
+                    else {
                         try {
                             cameraManager.setTorchMode("0", false);
                         } catch (CameraAccessException e) {
@@ -277,12 +305,14 @@ public class Flashlight_service extends Service implements SensorEventListener {
                     }
                 }
 
+                // reset count
                 count = 0;
             }
 
 
         }
 
+        // set values
         lastX = currentX;
         lastY = currentY;
         lastZ = currentZ;

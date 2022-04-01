@@ -5,6 +5,9 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.os.Build;
 
+/**
+ * Creates notification channel on the App level
+ */
 public class App extends Application {
     public static final String CHANNEL_ID1 = "Gesture Channel";
 

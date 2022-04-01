@@ -20,7 +20,10 @@ import androidx.core.content.ContextCompat;
 import com.example.gestures.Services.Flashlight_service;
 
 
-/// Creates the app mainActivity including toggle switches and text views
+/**
+ * Creates the app mainActivity including toggle switches and text views
+ */
+
 public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "MainActivity";
@@ -49,6 +52,7 @@ public class MainActivity extends AppCompatActivity {
     private int value;
 
 
+
     public void showSlider(View view){
         constraintLayout.setVisibility(View.VISIBLE);
 
@@ -59,6 +63,11 @@ public class MainActivity extends AppCompatActivity {
 
 
     }
+
+    /**
+     * Creates the activity
+     * @param savedInstanceState -
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -68,6 +77,8 @@ public class MainActivity extends AppCompatActivity {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !notificationManager.isNotificationPolicyAccessGranted()) {
             startActivity(new Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS));
         }
+
+
         flashLightSwitch = (Switch) findViewById(R.id.switch1);
         flashLightSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
@@ -103,6 +114,7 @@ public class MainActivity extends AppCompatActivity {
 
             }
         });
+
         dndSwitch = (Switch) findViewById(R.id.switch2);
         serviceSwitch = (Switch) findViewById(R.id.switch3);
         serviceSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
@@ -117,6 +129,7 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
+
         button = (Button) findViewById(R.id.button_update);
         constraintLayout = (ConstraintLayout) findViewById(R.id.seekView);
         functionView = (ConstraintLayout) findViewById(R.id.functionView);
@@ -214,7 +227,7 @@ public class MainActivity extends AppCompatActivity {
     /**
      * updates the service settings when user clicks button
      * based on technique of using android:onClick in XML file
-     * @param view
+     * @param view -
      */
     public void updateSettings(View view) {
         if (serviceSwitch.isChecked()) {
